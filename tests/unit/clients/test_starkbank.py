@@ -144,6 +144,7 @@ class TestStarkBankAdapter:
         assert result == InvoiceLog(
             log_type=event_entity_invoice_credited.log.type,
             invoice_fee=event_entity_invoice_credited.log.invoice.fee,
+            invoice_id=event_entity_invoice_credited.log.invoice.id,
             paid_amount=payment.amount,
         )
         event_parse_mock.assert_called_once()
@@ -171,6 +172,7 @@ class TestStarkBankAdapter:
         assert result == InvoiceLog(
             log_type=event_entity_invoice_created.log.type,
             invoice_fee=event_entity_invoice_created.log.invoice.fee,
+            invoice_id=event_entity_invoice_created.log.invoice.id,
             paid_amount=None,
         )
         event_parse_mock.assert_called_once()
@@ -219,6 +221,19 @@ class TestStarkBankAdapter:
 
     @mock.patch.object(starkbank.transfer, "create")
     def test_create_transfer(self, transfer_create_mock, testing_config):
+        transfer_result = starkbank.Transfer(
+            amount=10000,
+            name="Fulano da Silva",
+            tax_id="123.456.789-00",
+            bank_code="123",
+            branch_code="123456-7",
+            account_number="134567-8",
+            account_type="checking",
+            id="123",
+        )
+
+        transfer_create_mock.return_value = [transfer_result]
+
         transfer_args = {
             "amount": 100000,
             "cpf_cnpj": "123.456.789-00",
@@ -231,8 +246,9 @@ class TestStarkBankAdapter:
         }
         sb_adapter = StarkBankAdapter(config=testing_config)
 
-        sb_adapter.create_transfer(**transfer_args)
+        result = sb_adapter.create_transfer(**transfer_args)
 
+        assert result == transfer_result.id
         transfers = transfer_create_mock.call_args.args[0]
         assert len(transfers) == 1
         assert transfers[0].amount == transfer_args["amount"]

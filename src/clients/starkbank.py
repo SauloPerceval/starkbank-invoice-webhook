@@ -6,6 +6,7 @@ from config import Config
 class InvoiceLog(NamedTuple):
     log_type: str
     invoice_fee: int
+    invoice_id: str
     paid_amount: Optional[int] = None
 
 
@@ -41,12 +42,17 @@ class StarkBankAdapter:
 
         invoice = event.log.invoice
         if (log_type := event.log.type) != "credited":
-            return InvoiceLog(log_type=log_type, invoice_fee=invoice.fee)
+            return InvoiceLog(
+                log_type=log_type, invoice_fee=invoice.fee, invoice_id=invoice.id
+            )
 
         payment = self._starkbank_client.invoice.payment(invoice.id)
 
         return InvoiceLog(
-            log_type=log_type, invoice_fee=invoice.fee, paid_amount=payment.amount
+            log_type=log_type,
+            invoice_fee=invoice.fee,
+            invoice_id=invoice.id,
+            paid_amount=payment.amount,
         )
 
     def create_transfer(
@@ -59,8 +65,8 @@ class StarkBankAdapter:
         account_number: str,
         account_type: str,
         tag: Optional[str] = None,
-    ):
-        self._starkbank_client.transfer.create(
+    ) -> str:
+        transfers = self._starkbank_client.transfer.create(
             [
                 self._starkbank_client.Transfer(
                     amount=amount,
@@ -74,3 +80,4 @@ class StarkBankAdapter:
                 )
             ]
         )
+        return transfers[0].id
