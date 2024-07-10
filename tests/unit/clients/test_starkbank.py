@@ -111,10 +111,10 @@ def event_boleto_holmes(event_entity_from_content, event_content_invoice_credite
     return event_entity_from_content(boleto_holmes_event_content)
 
 
-class TestStarkBankAdapter:
-    @mock.patch.object(starkbank.invoice, "payment")
-    @mock.patch.object(starkbank.event, "parse")
-    def test_get_invoice_data_from_event_invoice_credited(
+@mock.patch.object(starkbank.invoice, "payment")
+@mock.patch.object(starkbank.event, "parse")
+class TestStarkBankAdapterGetInvoiceDataFromEvent:
+    def test_invoice_credited(
         self,
         event_parse_mock,
         invoice_payment_mock,
@@ -152,9 +152,7 @@ class TestStarkBankAdapter:
             event_entity_invoice_credited.log.invoice.id
         )
 
-    @mock.patch.object(starkbank.invoice, "payment")
-    @mock.patch.object(starkbank.event, "parse")
-    def test_get_invoice_data_from_event_invoice_other_than_credited(
+    def test_invoice_other_than_credited(
         self,
         event_parse_mock,
         invoice_payment_mock,
@@ -178,9 +176,7 @@ class TestStarkBankAdapter:
         event_parse_mock.assert_called_once()
         invoice_payment_mock.assert_not_called()
 
-    @mock.patch.object(starkbank.invoice, "payment")
-    @mock.patch.object(starkbank.event, "parse")
-    def test_get_invoice_data_from_event_subscription_other_than_invoice(
+    def test_subscription_other_than_invoice(
         self,
         event_parse_mock,
         invoice_payment_mock,
@@ -199,9 +195,7 @@ class TestStarkBankAdapter:
         event_parse_mock.assert_called_once()
         invoice_payment_mock.assert_not_called()
 
-    @mock.patch.object(starkbank.invoice, "payment")
-    @mock.patch.object(starkbank.event, "parse")
-    def test_get_invoice_data_from_event_invalid_digital_signature(
+    def test_invalid_digital_signature(
         self,
         event_parse_mock,
         invoice_payment_mock,
@@ -219,8 +213,10 @@ class TestStarkBankAdapter:
         event_parse_mock.assert_called_once()
         invoice_payment_mock.assert_not_called()
 
-    @mock.patch.object(starkbank.transfer, "create")
-    def test_create_transfer(self, transfer_create_mock, testing_config):
+
+@mock.patch.object(starkbank.transfer, "create")
+class TestStarkBankAdapterCreateTransfer:
+    def test_success(self, transfer_create_mock, testing_config):
         transfer_result = starkbank.Transfer(
             amount=10000,
             name="Fulano da Silva",
