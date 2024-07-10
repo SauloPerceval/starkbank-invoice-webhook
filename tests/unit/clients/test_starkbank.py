@@ -4,52 +4,7 @@ from unittest import mock
 import pytest
 import starkbank
 
-from clients.starkbank import InvalidDigitalSignature, InvoiceLog, StarkBankAdapter
-
-
-@pytest.fixture
-def event_content_invoice_credited():
-    return {
-        "event": {
-            "created": "2024-01-31T21:15:17.463956+00:00",
-            "id": "6046987522670592",
-            "log": {
-                "created": "2024-01-31T21:15:16.852263+00:00",
-                "errors": [],
-                "id": "5244688441278464",
-                "invoice": {
-                    "amount": 10000,
-                    "brcode": "",
-                    "created": "2024-01-31T21:15:16.701209+00:00",
-                    "descriptions": [],
-                    "discountAmount": 0,
-                    "discounts": [],
-                    "due": "2024-11-30T02:06:26.249976+00:00",
-                    "expiration": 1,
-                    "fee": 100,
-                    "fine": 2.5,
-                    "fineAmount": 0,
-                    "id": "5807638394699776",
-                    "interest": 1.3,
-                    "interestAmount": 0,
-                    "link": "",
-                    "name": "Iron Bank S.A.",
-                    "nominalAmount": 10000,
-                    "pdf": "",
-                    "rules": [],
-                    "splits": [],
-                    "status": "paid",
-                    "tags": ["war supply", "invoice #1234"],
-                    "taxId": "20.018.183/0001-80",
-                    "transactionIds": [],
-                    "updated": "2024-01-31T21:15:16.852309+00:00",
-                },
-                "type": "credited",
-            },
-            "subscription": "invoice",
-            "workspaceId": "6341320293482496",
-        }
-    }
+from src.clients.starkbank import InvalidDigitalSignature, InvoiceLog, StarkBankAdapter
 
 
 @pytest.fixture
@@ -76,39 +31,16 @@ def event_entity_invoice_credited(
 
 @pytest.fixture
 def event_entity_invoice_created(
-    event_content_invoice_credited, event_entity_from_content
+    event_content_invoice_created, event_entity_from_content
 ):
-    event_content_invoice_credited["event"]["log"]["type"] = "created"
 
-    return event_entity_from_content(event_content_invoice_credited)
+    return event_entity_from_content(event_content_invoice_created)
 
 
 @pytest.fixture
-def event_boleto_holmes(event_entity_from_content, event_content_invoice_credited):
-    boleto_holmes_event_content = {
-        "event": {
-            **event_content_invoice_credited["event"],
-            "subscription": "boleto-holmes",
-            "log": {
-                "id": "1010101010101010",
-                "created": "2020-07-24T17:58:08.338233+00:00",
-                "updated": "2020-07-24T17:58:08.338233+00:00",
-                "errors": [],
-                "type": "solved",
-                "holmes": {
-                    "boletoId": "5656565656565656",
-                    "created": "2020-07-23T00:07:51.611174+00:00",
-                    "id": "3232323232323232",
-                    "result": "paid",
-                    "status": "solved",
-                    "tags": ["sherlock", "holmes"],
-                    "updated": "2020-07-23T00:07:51.611174+00:00",
-                },
-            },
-        },
-    }
+def event_entity_boleto_holmes(event_entity_from_content, event_content_boleto_holmes):
 
-    return event_entity_from_content(boleto_holmes_event_content)
+    return event_entity_from_content(event_content_boleto_holmes)
 
 
 @mock.patch.object(starkbank.invoice, "payment")
@@ -180,11 +112,11 @@ class TestStarkBankAdapterGetInvoiceDataFromEvent:
         self,
         event_parse_mock,
         invoice_payment_mock,
-        event_boleto_holmes,
+        event_entity_boleto_holmes,
         testing_config,
     ):
         sb_adapter = StarkBankAdapter(config=testing_config)
-        event_parse_mock.return_value = event_boleto_holmes
+        event_parse_mock.return_value = event_entity_boleto_holmes
 
         result = sb_adapter.get_invoice_data_from_event(
             event_body="{}",

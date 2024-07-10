@@ -1,9 +1,16 @@
 import json
+import logging
 
-# import requests
+from config import StagingConfig
+from use_case import InvoiceWebhookUseCase
 
 
-def lambda_handler(event, context):
+logger = logging.getLogger()
+
+
+def lambda_handler(event, context, config=StagingConfig()):
+    logger.setLevel(config["LOGLEVEL"] or "INFO")
+
     """Sample pure Lambda function
 
     Parameters
@@ -24,19 +31,20 @@ def lambda_handler(event, context):
 
         Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
     """
+    use_case = InvoiceWebhookUseCase(config=config, logger=logger)
+    status_code, response_message, log_message = (
+        use_case.process_invoice_credited_webhook(
+            event_body=event.get("body"),
+            event_headers=event.get("headers", {}),
+        )
+    )
 
-    # try:
-    #     ip = requests.get("http://checkip.amazonaws.com/")
-    # except requests.RequestException as e:
-    #     # Send some context about this error to Lambda Logs
-    #     print(e)
-
-    #     raise e
-
+    logger.info(log_message)
     return {
-        "statusCode": 200,
-        "body": json.dumps({
-            "message": "hello world",
-            # "location": ip.text.replace("\n", "")
-        }),
+        "statusCode": status_code,
+        "body": json.dumps(
+            {
+                "message": response_message,
+            }
+        ),
     }

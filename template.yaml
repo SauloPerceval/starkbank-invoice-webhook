@@ -50,7 +50,10 @@ Parameters:
       - payment
       - savings
       - salary
-
+  TransfersTag:
+    Type: String
+    Default: test-saulo
+    Description: Tag that will be passed on created transfers
   LogLevel:
     Type: String
     Default: INFO
@@ -92,6 +95,7 @@ Resources:
           TRANSFER_DESTINATION_NAME: !Ref TransferDestinationName
           TRANSFER_DESTINATION_CPF_CNPJ: !Ref TransferDestinationCpfCnpj
           TRANSFER_DESTINATION_ACCOUNT_TYPE: !Ref TransferDestinationAccountType
+          TRANSFERS_TAG: !Ref TransfersTag
       Policies:
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub
