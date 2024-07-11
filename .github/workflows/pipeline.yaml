@@ -104,7 +104,7 @@ jobs:
   #           --no-fail-on-empty-changeset \
   #           --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE} \
   #           --parameter-overrides StarkbankSecretsId=${{ secrets.STARKBANKSECRETSID }} \
-  #           --parameter-overrides RedisConnectionSecretsId=${{ secrets.REDISCONNECTIONSECRESTID }}
+  #           --parameter-overrides RedisConnectionSecretsId=${{ secrets.REDISCONNECTIONSECRETSID }}
 
   build-and-package:
     if: github.ref == 'refs/heads/master'
@@ -193,7 +193,7 @@ jobs:
             --no-fail-on-empty-changeset \
             --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE} \
             --parameter-overrides StarkbankSecretsId=${{ secrets.STARKBANKSECRETSID }} \
-            --parameter-overrides RedisConnectionSecretsId=${{ secrets.REDISCONNECTIONSECRESTID }}
+            --parameter-overrides RedisConnectionSecretsId=${{ secrets.REDISCONNECTIONSECRETSID }}
 
   # integration-test:
   #   if: github.ref == 'refs/heads/master'
@@ -239,4 +239,4 @@ jobs:
   #           --no-fail-on-empty-changeset \
   #           --role-arn ${PROD_CLOUDFORMATION_EXECUTION_ROLE} \
   #           --parameter-overrides StarkbankSecretsId=${{ secrets.STARKBANKSECRETSID }} \
-  #           --parameter-overrides RedisConnectionSecretsId=${{ secrets.REDISCONNECTIONSECRESTID }}
+  #           --parameter-overrides RedisConnectionSecretsId=${{ secrets.REDISCONNECTIONSECRETSID }}
