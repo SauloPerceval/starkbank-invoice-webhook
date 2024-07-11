@@ -8,21 +8,6 @@ from src.clients.starkbank import InvalidDigitalSignature, InvoiceLog, StarkBank
 
 
 @pytest.fixture
-def event_entity_from_content():
-    def get_event_entity_from_content_dict(content_dict):
-        return starkbank.Event(
-            id=content_dict["event"]["id"],
-            workspace_id=content_dict["event"]["workspaceId"],
-            log=content_dict["event"]["log"],
-            created=datetime.datetime.fromisoformat(content_dict["event"]["created"]),
-            subscription=content_dict["event"]["subscription"],
-            is_delivered=False,
-        )
-
-    return get_event_entity_from_content_dict
-
-
-@pytest.fixture
 def event_entity_invoice_credited(
     event_content_invoice_credited, event_entity_from_content
 ):
@@ -43,18 +28,45 @@ def event_entity_boleto_holmes(event_entity_from_content, event_content_boleto_h
     return event_entity_from_content(event_content_boleto_holmes)
 
 
-@mock.patch.object(starkbank.invoice, "payment")
 @mock.patch.object(starkbank.event, "parse")
-class TestStarkBankAdapterGetInvoiceDataFromEvent:
+class TestStarkBankAdapterGetEventEntityAndIdFromBody:
+    def test_success(
+        self, event_parse_mock, event_entity_invoice_credited, testing_config
+    ):
+        sb_adapter = StarkBankAdapter(config=testing_config)
+        event_parse_mock.return_value = event_entity_invoice_credited
+
+        result = sb_adapter.get_event_entity_and_id_from_body(
+            event_body="{}", digital_signature="Signature"
+        )
+
+        assert result == (
+            event_entity_invoice_credited,
+            event_entity_invoice_credited.id,
+        )
+        event_parse_mock.assert_called_once()
+
+    def test_invalid_signature(self, event_parse_mock, testing_config):
+        sb_adapter = StarkBankAdapter(config=testing_config)
+        event_parse_mock.side_effect = starkbank.error.InvalidSignatureError()
+
+        with pytest.raises(InvalidDigitalSignature):
+            sb_adapter.get_event_entity_and_id_from_body(
+                event_body="{}", digital_signature="Signature"
+            )
+
+        event_parse_mock.assert_called_once()
+
+
+@mock.patch.object(starkbank.invoice, "payment")
+class TestStarkBankAdapterGetInvoiceDataFromEventEntity:
     def test_invoice_credited(
         self,
-        event_parse_mock,
         invoice_payment_mock,
         event_entity_invoice_credited,
         testing_config,
     ):
         sb_adapter = StarkBankAdapter(config=testing_config)
-        event_parse_mock.return_value = event_entity_invoice_credited
         payment = starkbank.invoice.Payment(
             amount=10100,
             name="Fulano da Silva",
@@ -68,9 +80,8 @@ class TestStarkBankAdapterGetInvoiceDataFromEvent:
         )
         invoice_payment_mock.return_value = payment
 
-        result = sb_adapter.get_invoice_data_from_event(
-            event_body="{}",
-            digital_signature="Signature",
+        result = sb_adapter.get_invoice_data_from_event_entity(
+            event_entity=event_entity_invoice_credited
         )
 
         assert result == InvoiceLog(
@@ -79,24 +90,20 @@ class TestStarkBankAdapterGetInvoiceDataFromEvent:
             invoice_id=event_entity_invoice_credited.log.invoice.id,
             paid_amount=payment.amount,
         )
-        event_parse_mock.assert_called_once()
         invoice_payment_mock.assert_called_once_with(
             event_entity_invoice_credited.log.invoice.id
         )
 
     def test_invoice_other_than_credited(
         self,
-        event_parse_mock,
         invoice_payment_mock,
         event_entity_invoice_created,
         testing_config,
     ):
         sb_adapter = StarkBankAdapter(config=testing_config)
-        event_parse_mock.return_value = event_entity_invoice_created
 
-        result = sb_adapter.get_invoice_data_from_event(
-            event_body="{}",
-            digital_signature="Signature",
+        result = sb_adapter.get_invoice_data_from_event_entity(
+            event_entity=event_entity_invoice_created
         )
 
         assert result == InvoiceLog(
@@ -105,44 +112,21 @@ class TestStarkBankAdapterGetInvoiceDataFromEvent:
             invoice_id=event_entity_invoice_created.log.invoice.id,
             paid_amount=None,
         )
-        event_parse_mock.assert_called_once()
         invoice_payment_mock.assert_not_called()
 
     def test_subscription_other_than_invoice(
         self,
-        event_parse_mock,
         invoice_payment_mock,
         event_entity_boleto_holmes,
         testing_config,
     ):
         sb_adapter = StarkBankAdapter(config=testing_config)
-        event_parse_mock.return_value = event_entity_boleto_holmes
 
-        result = sb_adapter.get_invoice_data_from_event(
-            event_body="{}",
-            digital_signature="Signature",
+        result = sb_adapter.get_invoice_data_from_event_entity(
+            event_entity=event_entity_boleto_holmes
         )
 
         assert result is None
-        event_parse_mock.assert_called_once()
-        invoice_payment_mock.assert_not_called()
-
-    def test_invalid_digital_signature(
-        self,
-        event_parse_mock,
-        invoice_payment_mock,
-        testing_config,
-    ):
-        sb_adapter = StarkBankAdapter(config=testing_config)
-        event_parse_mock.side_effect = starkbank.error.InvalidSignatureError()
-
-        with pytest.raises(InvalidDigitalSignature):
-            sb_adapter.get_invoice_data_from_event(
-                event_body="{}",
-                digital_signature="Signature",
-            )
-
-        event_parse_mock.assert_called_once()
         invoice_payment_mock.assert_not_called()
 
 

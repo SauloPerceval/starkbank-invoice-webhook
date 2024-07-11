@@ -26,6 +26,10 @@ def testing_config():
             "TRANSFER_DESTINATION_NAME": "Fulano da Silva",
             "TRANSFER_DESTINATION_CPF_CNPJ": "123.456.789-00",
             "TRANSFER_DESTINATION_ACCOUNT_TYPE": "checking",
+            "REDIS_HOST": "test",
+            "REDIS_PORT": "6379",
+            "REDIS_PASSWORD": "pass",
+            "DUPLICATED_EVENT_VALIDATION_EXP": 60,
         }
     )
 
@@ -106,3 +110,22 @@ def event_content_boleto_holmes(event_content_invoice_credited):
             },
         },
     }
+
+
+@pytest.fixture
+def event_entity_from_content():
+    from datetime import datetime
+
+    import starkbank
+
+    def get_event_entity_from_content_dict(content_dict):
+        return starkbank.Event(
+            id=content_dict["event"]["id"],
+            workspace_id=content_dict["event"]["workspaceId"],
+            log=content_dict["event"]["log"],
+            created=datetime.fromisoformat(content_dict["event"]["created"]),
+            subscription=content_dict["event"]["subscription"],
+            is_delivered=False,
+        )
+
+    return get_event_entity_from_content_dict

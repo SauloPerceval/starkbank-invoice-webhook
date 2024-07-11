@@ -1,4 +1,6 @@
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Tuple
+
+import starkbank
 
 from config import Config
 
@@ -16,8 +18,6 @@ class InvalidDigitalSignature(Exception):
 
 class StarkBankAdapter:
     def __init__(self, config: Config):
-        import starkbank
-
         user = starkbank.Project(
             environment=config["STARKBANK_ENVIRONMENT"],
             id=config["STARKBANK_PROJECT_ID"],
@@ -27,9 +27,9 @@ class StarkBankAdapter:
 
         self._starkbank_client = starkbank
 
-    def get_invoice_data_from_event(
+    def get_event_entity_and_id_from_body(
         self, event_body: str, digital_signature: str
-    ) -> Optional[InvoiceLog]:
+    ) -> Tuple[starkbank.Event, str]:
         try:
             event = self._starkbank_client.event.parse(
                 content=event_body, signature=digital_signature
@@ -37,11 +37,16 @@ class StarkBankAdapter:
         except self._starkbank_client.error.InvalidSignatureError:
             raise InvalidDigitalSignature
 
-        if event.subscription != "invoice":
+        return event, event.id
+
+    def get_invoice_data_from_event_entity(
+        self, event_entity: starkbank.Event
+    ) -> Optional[InvoiceLog]:
+        if event_entity.subscription != "invoice":
             return None
 
-        invoice = event.log.invoice
-        if (log_type := event.log.type) != "credited":
+        invoice = event_entity.log.invoice
+        if (log_type := event_entity.log.type) != "credited":
             return InvoiceLog(
                 log_type=log_type, invoice_fee=invoice.fee, invoice_id=invoice.id
             )

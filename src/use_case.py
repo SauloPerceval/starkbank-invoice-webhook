@@ -1,6 +1,8 @@
 from logging import Logger
 from typing import Optional, Tuple
 
+import redis
+
 from clients.starkbank import InvalidDigitalSignature, StarkBankAdapter
 from config import Config
 
@@ -11,10 +13,17 @@ class InvoiceWebhookUseCase:
         logger: Logger,
         config: Config,
         adapter_class=StarkBankAdapter,
+        redis_client_class=redis.Redis,
     ) -> None:
         self._logger = logger
         self._config = config
         self._sb_adapter = adapter_class(config=config)
+
+        self._redis_client = redis_client_class(
+            host=config["REDIS_HOST"],
+            port=config["REDIS_PORT"],
+            password=config["REDIS_PASSWORD"],
+        )
 
     def process_invoice_credited_webhook(
         self, event_body: Optional[str], event_headers: dict
@@ -30,8 +39,10 @@ class InvoiceWebhookUseCase:
             )
 
         try:
-            invoice_log = self._sb_adapter.get_invoice_data_from_event(
-                event_body=event_body, digital_signature=digital_signature
+            starkbank_event_entity, event_id = (
+                self._sb_adapter.get_event_entity_and_id_from_body(
+                    event_body=event_body, digital_signature=digital_signature
+                )
             )
         except InvalidDigitalSignature:
             return (
@@ -40,6 +51,25 @@ class InvoiceWebhookUseCase:
                 "Received a request with invalid Digital-Signature headers",
             )
 
+        event_id_setted = self._redis_client.set(
+            f"starkbank-event-id:{event_id}",
+            1,
+            nx=True,
+            ex=self._config["DUPLICATED_EVENT_VALIDATION_EXP"],
+        )
+
+        if not event_id_setted:
+            return (
+                200,
+                "Ok",
+                f"Event with id {event_id} was already processed before, will be ignored",
+            )
+
+        self._logger.info(f"Processing event with id {event_id}")
+
+        invoice_log = self._sb_adapter.get_invoice_data_from_event_entity(
+            event_entity=starkbank_event_entity
+        )
         if not invoice_log:
             return 200, "Ok", "Received event was not related with invoice"
 
