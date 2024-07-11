@@ -139,26 +139,26 @@ jobs:
           name: packaged-testing.yaml
           path: packaged-testing.yaml
 
-      - name: Assume the prod pipeline user role
-        uses: aws-actions/configure-aws-credentials@v1-node16
-        with:
-          aws-region: ${{ env.PROD_REGION }}
-          role-to-assume: ${{ env.PROD_PIPELINE_EXECUTION_ROLE }}
-          role-session-name: prod-packaging
-          role-duration-seconds: 3600
-          role-skip-session-tagging: true
+      # - name: Assume the prod pipeline user role
+      #   uses: aws-actions/configure-aws-credentials@v1-node16
+      #   with:
+      #     aws-region: ${{ env.PROD_REGION }}
+      #     role-to-assume: ${{ env.PROD_PIPELINE_EXECUTION_ROLE }}
+      #     role-session-name: prod-packaging
+      #     role-duration-seconds: 3600
+      #     role-skip-session-tagging: true
 
-      - name: Upload artifacts to production artifact buckets
-        run: |
-          sam package \
-            --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
-            --region ${PROD_REGION} \
-            --output-template-file packaged-prod.yaml
+      # - name: Upload artifacts to production artifact buckets
+      #   run: |
+      #     sam package \
+      #       --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
+      #       --region ${PROD_REGION} \
+      #       --output-template-file packaged-prod.yaml
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: packaged-prod.yaml
-          path: packaged-prod.yaml
+      # - uses: actions/upload-artifact@v3
+      #   with:
+      #     name: packaged-prod.yaml
+      #     path: packaged-prod.yaml
 
   deploy:
     if: github.ref == 'refs/heads/master'
