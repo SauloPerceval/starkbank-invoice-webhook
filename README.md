@@ -26,6 +26,8 @@ pytest --cov=src tests
 sam build
 ```
 
+-- Start a local instance of Redis use a cloud hosted Redis Database
+
 - Create a json file (e.x. .env.json) with the required env vars, following the example:
 
 ```
@@ -33,6 +35,9 @@ sam build
   "StarkbankInvoiceCreation": {
     "STARKBANK_PROJECT_ID": "Your Starkbank Project ID",
     "STARKBANK_PRIVATE_KEY_CONTENT": "Your private key content",
+    "REDIS_HOST": "localhost"
+    "REDIS_PORT": "6390",
+    "REDIS_PASSWORD": "",
   }
 }
 ```
