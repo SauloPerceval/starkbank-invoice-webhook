@@ -52,7 +52,10 @@ class InvoiceWebhookUseCase:
             )
 
         event_id_setted = self._redis_client.set(
-            event_id, 1, nx=True, ex=self._config["DUPLICATED_EVENT_VALIDATION_EXP"]
+            f"starkbank-event-id:{event_id}",
+            1,
+            nx=True,
+            ex=self._config["DUPLICATED_EVENT_VALIDATION_EXP"],
         )
 
         if not event_id_setted:

@@ -160,7 +160,7 @@ class TestInvoiceWebhookUseCase:
             adapter_class=mocked_adapter_class,
             redis_client_class=fake_redis_class,
         )
-        use_case._redis_client.set(event_id, 1)
+        use_case._redis_client.set(f"starkbank-event-id:{event_id}", 1)
 
         status_code, response_message, log_message = (
             use_case.process_invoice_credited_webhook(
