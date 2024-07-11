@@ -168,3 +168,4 @@ cython_debug/
 .aws-sam
 .env.json
 
+samconfig.toml

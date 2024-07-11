@@ -14,6 +14,13 @@ Parameters:
   StarkbankSecretsId:
     Type: String
     Description: ID of Secret where is stored Starkbank Project ID and Private Key
+  RedisConnectionSecretsId:
+    Type: String
+    Description: ID of Secret where is stored Redis connection data
+  DuplicatedEventValidationExp:
+    Type: Number
+    Description: Number of seconds that will cache processed events ids, to avoid duplicated process. Default: 36000
+    Default: 36000
   StarkbankEnvironment:
     Type: String
     Default: sandbox
@@ -96,11 +103,25 @@ Resources:
           TRANSFER_DESTINATION_CPF_CNPJ: !Ref TransferDestinationCpfCnpj
           TRANSFER_DESTINATION_ACCOUNT_TYPE: !Ref TransferDestinationAccountType
           TRANSFERS_TAG: !Ref TransfersTag
+          REDIS_HOST: !Sub
+            - "{{resolve:secretsmanager:arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${RedisConnectionSecretsId}:SecretString:HOST}}"
+            - RedisConnectionSecretsId: !Ref RedisConnectionSecretsId
+          REDIS_PORT: !Sub
+            - "{{resolve:secretsmanager:arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${RedisConnectionSecretsId}:SecretString:PORT}}"
+            - RedisConnectionSecretsId: !Ref RedisConnectionSecretsId
+          REDIS_PASSWORD: !Sub
+            - "{{resolve:secretsmanager:arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${RedisConnectionSecretsId}:SecretString:PASSWORD}}"
+            - RedisConnectionSecretsId: !Ref RedisConnectionSecretsId
+          DUPLICATED_EVENT_VALIDATION_EXP: !Ref DUPLICATED_EVENT_VALIDATION_EXP
       Policies:
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub
               - "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${StarkbankSecretsId}"
               - StarkbankSecretsId: !Ref StarkbankSecretsId
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub
+              - "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${RedisConnectionSecretsId}"
+              - RedisConnectionSecretsId: !Ref RedisConnectionSecretsId
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
