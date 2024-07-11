@@ -237,11 +237,6 @@ jobs:
   #           --region ${PROD_REGION} \
   #           --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
   #           --no-fail-on-empty-changeset \
-<<<<<<< HEAD
-  #           --role-arn ${PROD_CLOUDFORMATION_EXECUTION_ROLE}
+  #           --role-arn ${PROD_CLOUDFORMATION_EXECUTION_ROLE} \
   #           --parameter-overrides StarkbankSecretsId=${{ secrets.STARKBANKSECRETSID }} \
   #           --parameter-overrides RedisConnectionSecretsId=${{ secrets.REDISCONNECTIONSECRESTID }}
-=======
-  #           --role-arn ${PROD_CLOUDFORMATION_EXECUTION_ROLE} \
-  #           --parameter-overrides StarkbankSecretsId=${{ secrets.STARKBANKSECRETSID }}
->>>>>>> master
