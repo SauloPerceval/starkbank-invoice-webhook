@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  starkbank-invoice-webhook
+
+  SAM Template for starkbank-invoice-webhook
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 30
+
+Parameters:
+  StarkbankSecretsId:
+    Type: String
+    Description: ID of Secret where is stored Starkbank Project ID and Private Key
+  StarkbankEnvironment:
+    Type: String
+    Default: sandbox
+    Description: Starkbank environment where the invoices will be created
+    AllowedValues:
+      - sandbox
+      - production
+  TransferDestinationBankCode:
+    Type: String
+    Description: Bank code that will receive the transfer
+    Default: 20018183
+  TransferDestinationBranch:
+    Type: String
+    Default: 0001
+    Description: Bank branch that will receive the transfer
+  TransferDestinationAccount:
+    Type: String
+    Default: 6341320293482496
+    Description: Bank account number that will receive the transfer
+  TransferDestinationName:
+    Type: String
+    Default: Stark Bank S.A.
+    Description: Name of the transfer receiver
+  TransferDestinationCpfCnpj:
+    Type: String
+    Default: 20.018.183/0001-80
+    Description: CPF or CNPJ of the transfer receiver
+  TransferDestinationAccountType:
+    Type: String
+    Default: payment
+    Description: Type of the account that will receive the transfer
+    AllowedValues:
+      - checking
+      - payment
+      - savings
+      - salary
+  TransfersTag:
+    Type: String
+    Default: test-saulo
+    Description: Tag that will be passed on created transfers
+  LogLevel:
+    Type: String
+    Default: INFO
+    Description: Level of logs that will be emitted by lambda
+    AllowedValues:
+      - DEBUG
+      - INFO
+      - WARNING
+      - ERROR
+      - CRITICAL
+
+Resources:
+  StarkbankInvoiceWebhook:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Events:
+        WebhookApi:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /webhook
+            Method: post
+      Environment:
+        Variables:
+          STARKBANK_ENVIRONMENT: !Ref StarkbankEnvironment
+          STARKBANK_PROJECT_ID: !Sub
+            - "{{resolve:secretsmanager:arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${StarkbankSecretsId}:SecretString:PROJECT_ID}}"
+            - StarkbankSecretsId: !Ref StarkbankSecretsId
+          STARKBANK_PRIVATE_KEY_CONTENT: !Sub
+            - "{{resolve:secretsmanager:arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${StarkbankSecretsId}:SecretString:PRIVATE_KEY}}"
+            - StarkbankSecretsId: !Ref StarkbankSecretsId
+          TRANSFER_DESTINATION_BANK_CODE: !Ref TransferDestinationBankCode
+          TRANSFER_DESTINATION_BRANCH: !Ref TransferDestinationBranch
+          TRANSFER_DESTINATION_ACCOUNT: !Ref TransferDestinationAccount
+          TRANSFER_DESTINATION_NAME: !Ref TransferDestinationName
+          TRANSFER_DESTINATION_CPF_CNPJ: !Ref TransferDestinationCpfCnpj
+          TRANSFER_DESTINATION_ACCOUNT_TYPE: !Ref TransferDestinationAccountType
+          TRANSFERS_TAG: !Ref TransfersTag
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub
+              - "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${StarkbankSecretsId}"
+              - StarkbankSecretsId: !Ref StarkbankSecretsId
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  WebhookApi:
+    Description: "API Gateway endpoint URL for Prod stage for Starkbank Invoice Webhook function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/webhook/"
+  StarkbankInvoiceWebhook:
+    Description: "Starkbank Invoice Webhook Lambda Function ARN"
+    Value: !GetAtt StarkbankInvoiceWebhook.Arn
+  StarkbankInvoiceWebhookIamRole:
+    Description: "Implicit IAM Role created for Starkbank Invoice Webhook function"
+    Value: !GetAtt StarkbankInvoiceWebhook.Arn
