@@ -5,7 +5,7 @@ from src.app import lambda_handler
 
 
 @mock.patch("src.app.InvoiceWebhookUseCase.process_invoice_credited_webhook")
-class TestApp:
+class TestLambdaHandler:
     def test_success(
         self,
         process_invoice_credited_webhook_mock,
