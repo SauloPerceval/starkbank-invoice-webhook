@@ -112,7 +112,7 @@ Resources:
           REDIS_PASSWORD: !Sub
             - "{{resolve:secretsmanager:arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${RedisConnectionSecretsId}:SecretString:PASSWORD}}"
             - RedisConnectionSecretsId: !Ref RedisConnectionSecretsId
-          DUPLICATED_EVENT_VALIDATION_EXP: !Ref DUPLICATED_EVENT_VALIDATION_EXP
+          DUPLICATED_EVENT_VALIDATION_EXP: !Ref DuplicatedEventValidationExp
       Policies:
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub
