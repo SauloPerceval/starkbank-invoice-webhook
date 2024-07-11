@@ -19,7 +19,7 @@ Parameters:
     Description: ID of Secret where is stored Redis connection data
   DuplicatedEventValidationExp:
     Type: Number
-    Description: Number of seconds that will cache processed events ids, to avoid duplicated process. Default: 36000
+    Description: Number of seconds that will cache processed events ids, to avoid duplicated process. Default is 36000
     Default: 36000
   StarkbankEnvironment:
     Type: String
